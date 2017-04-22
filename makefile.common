@@ -1,0 +1,56 @@
+CC = avr-gcc
+
+CFLAGS = -Wall
+CFLAGS += -O1
+CFLAGS += -I$(MAINDIR)
+CFLAGS += -fpack-struct
+CFLAGS += -fshort-enums
+CFLAGS += -std=gnu99
+CFLAGS += -funsigned-char
+CFLAGS += -funsigned-bitfields
+CFLAGS += -DF_CPU=$(CPU)UL
+CFLAGS += -MMD
+CFLAGS += -MP
+CFLAGS += -mmcu=$(MCU)
+CFLAGS += -lm 
+CFLAGS += -lprintf_flt -Wl,-u,vfprintf
+
+
+CFLAGS_LAST = 
+
+all: $(TARGET).hex
+
+%.hex: %.elf %.lss
+	@echo Linking $@
+	avr-objcopy -O ihex -R .eeprom -R .fuse -R .lock -R .signature $< $@
+	avr-size --format=avr --mcu=$(CPU) $(TARGET).elf
+
+%.lss: %.elf
+	avr-objdump -h -S $< > $@
+%.o: %.c
+	@echo Compiling $@
+	$(CC) -c $(CFLAGS) $< -o $@ $(CFLAGS_LAST)
+
+gdbserver: $(TARGET).hex
+	avarice -g -j usb --erase --program --file $(TARGET).hex :4242
+
+program: $(TARGET).hex
+	sudo /usr/local/bin/avrdude -c dragon_jtag -p $(MCU) -P usb -U flash:w:$(TARGET).hex
+
+programpdi: $(TARGET).hex
+	sudo /usr/local/bin/avrdude -c dragon_pdi -p $(MCU) -P usb -U flash:w:$(TARGET).hex
+
+programisp: $(TARGET).hex
+	sudo avrdude -c dragon_isp -p $(MCU) -P usb -U flash:w:$(TARGET).hex
+
+reset:
+	sudo avrdude -c dragon_jtag -p $(MCU) -P usb
+
+progterm:
+	sudo avrdude -c dragon_pdi -p $(MCU) -P usb -t
+
+$(TARGET).elf: $(TARGET).o $(DEPENDS)
+		$(CC) $(CFLAGS) -o $@ $^ -lm
+
+clean:
+		rm -f *.o *.elf *.hex *.d
