@@ -1,7 +1,7 @@
 CC = avr-gcc
 
 CFLAGS = -Wall
-CFLAGS += -O1
+CFLAGS += -O3
 CFLAGS += -I$(MAINDIR)
 CFLAGS += -fpack-struct
 CFLAGS += -fshort-enums
@@ -12,11 +12,11 @@ CFLAGS += -DF_CPU=$(CPU)UL
 CFLAGS += -MMD
 CFLAGS += -MP
 CFLAGS += -mmcu=$(MCU)
-CFLAGS += -lm 
+CFLAGS += -lm
 CFLAGS += -lprintf_flt -Wl,-u,vfprintf
 
 
-CFLAGS_LAST = 
+CFLAGS_LAST =
 
 all: $(TARGET).hex
 
@@ -35,7 +35,7 @@ gdbserver: $(TARGET).hex
 	avarice -g -j usb --erase --program --file $(TARGET).hex :4242
 
 program: $(TARGET).hex
-	sudo /usr/local/bin/avrdude -c dragon_jtag -p $(MCU) -P usb -U flash:w:$(TARGET).hex
+	sudo /usr/local/bin/avrdude -c jtag3isp -p $(MCU) -P usb -B 5 -U flash:w:$(TARGET).hex
 
 programpdi: $(TARGET).hex
 	sudo /usr/local/bin/avrdude -c dragon_pdi -p $(MCU) -P usb -U flash:w:$(TARGET).hex

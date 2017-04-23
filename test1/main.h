@@ -5,6 +5,7 @@
 #include <util/delay.h>
 #include <avr/power.h>
 
+#include "afsk.h"
 //#include "rda1846.h"
 
 #define TOPLED_PORT PORTB
