@@ -16,16 +16,27 @@ int main(void) {
     memset(sendBuf, 0, MAX_BUF_LEN);
     bufCounter = 0;
 
-    // sendBuf[bufCounter++] = 0x7E;
-    memcpy(&sendBuf[bufCounter], "QTH1  0", 7);
-    bufCounter += 7;
-    memcpy(&sendBuf[bufCounter], "KJ4WTR0", 7);
-    bufCounter += 7;
+    memcpy(&sendBuf[bufCounter], "APZXXX0", 6);
+    bufCounter += 6;
+    sendBuf[bufCounter++] = 0x30;
+    memcpy(&sendBuf[bufCounter], "KJ4WTR0", 6);
+    bufCounter += 6;
+    sendBuf[bufCounter++] = 0x30;
+
+    // left shift the address bytes
+    for (int i = 0; i < bufCounter; i++) {
+      sendBuf[i] <<= 1;
+    }
+    // mark the end of the addresses
+    sendBuf[bufCounter-1] |= 1;
+
     sendBuf[bufCounter++] = 0x03;
     sendBuf[bufCounter++] = 0xF0;
-    sendBuf[bufCounter++] = 0x21;
-    memcpy(&sendBuf[bufCounter], "3445.20N/08635.49W-TEST", 23);
-    bufCounter += 23;
+    // sendBuf[bufCounter++] = 0x21;
+    // memcpy(&sendBuf[bufCounter], "!3445.20N/08635.49W-TEST", 24);
+    // bufCounter += 24;
+    memcpy(&sendBuf[bufCounter], "ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789abcdefghijklmnopqrstuvwxyz!", 63);
+    bufCounter += 63;
 
     _delay_ms(1000);
     rda_setFreq(144390);
@@ -35,7 +46,7 @@ int main(void) {
     while (1) {
       TOPLED_PORT ^= (1<<TOPLED_PIN);
       if (timerCounter++ >= 30) {
-        txAFSK(sendBuf, bufCounter, 50);
+        txAFSK(&sendBuf[0], bufCounter, 10);
         // rda_sendDigital(sendBuf, bufCounter, 100, MARK, SPACE);
         timerCounter = 0;
       }

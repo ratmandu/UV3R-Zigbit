@@ -10,13 +10,17 @@ void initAFSK() {
 void txAFSK(unsigned char data[], uint16_t len, uint16_t preamble) {
   crc = 0xFFFF;
   sending = 1;
+  tone = MARK;
 
   rda_setDataTX(1);
-  _delay_ms(100);
+  _delay_ms(10);
 
   // send preamble
+  for (uint16_t p = 0; p < 30; p++) {
+    afskSendByte(0x00, 1);
+  }
   for (uint16_t p = 0; p < preamble; p++) {
-    afskSendByte(0x7e, 0);
+    afskSendByte(0x7E, 0);
   }
 
   // send data
@@ -27,34 +31,58 @@ void txAFSK(unsigned char data[], uint16_t len, uint16_t preamble) {
 
   // send footer
   uint16_t final_crc = crc;
-  afskSendByte(~(final_crc & 0xFF), 0);
+  afskSendByte(final_crc ^ 0xFF, 1);
   final_crc >>= 8;
-  afskSendByte(~(final_crc & 0xFF), 0);
+  afskSendByte(final_crc ^ 0xFF, 1);
   // send tail
   for (uint16_t t = 0; t < preamble; t++) {
     afskSendByte(0x7e, 0);
   }
-  _delay_ms(100);
+  _delay_ms(10);
   rda_setDataTX(0);
   sending = 0;
 }
 
-void afskSendByte(unsigned char byte, int stuff) {
-  for (unsigned char b = 0; b < 7; b++) {
-    if (byte & 0x01) {
-      // no tone change
-      bitStuffCount++;
-      if (bitStuffCount > BIT_STUFF_LEN && stuff == 1) {
-        flipTone();
-        // rda_toneWait(tone, 833);
-      }
-      // rda_toneWait(tone, 850);
-    } else {
+void afskSendFCS(unsigned char byte) {
+  int count = 8;
+  while (count) {
+    if (!(byte & 0x80)) {
+      // we have a zero, flip it
       flipTone();
+      byte <<= 1;
+      count--;
+    } else if (bitStuffCount++ >= 5) {
+      flipTone();
+    } else {
+      // we have a one, dont toggle
+      byte <<= 1;
+      count--;
+      bitStuffCount++;
     }
 
-    rda_toneWait(tone, 850);
-    byte >>= 1;
+    rda_toneWait(tone, 833);
+  }
+}
+
+void afskSendByte(unsigned char byte, int stuff) {
+  int count = 8;
+  // bitStuffCount = 0;
+  while (count) {
+    if (!(byte & 0x01)) {
+      // this is a zero, flip the tone
+      flipTone();
+      byte >>= 1;
+      count--;
+    } else if (bitStuffCount++ >= 5 && stuff == 1){
+      flipTone();
+    } else {
+      // current bit is a one, don't toggle
+      byte >>= 1;
+      count--;
+      bitStuffCount++;
+    }
+
+    rda_toneWait(tone, 833);
   }
 }
 
@@ -67,16 +95,12 @@ void flipTone() {
 }
 
 void update_crc(uint8_t byte) {
-  uint8_t bit;
+  crc ^= byte;
   for (int i = 0; i < 8; i++) {
-    bit = byte & 0x01;
-    byte >>= 1;
-
-    crc ^= bit;
-    if (crc & 1) {
-      crc = (crc >> 1) ^ 0x8408;
+    if (crc & 0x0001) {
+      crc = (crc>>1) ^ 0x8408;
     } else {
-      crc = crc >> 1;
+      crc >>= 1;
     }
   }
 }

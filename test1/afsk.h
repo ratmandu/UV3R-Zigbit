@@ -11,6 +11,7 @@
 #define MARK 4915
 #define SPACE 9011
 
+
 #define BIT_STUFF_LEN 5
 #define MAX_BUF_LEN 1024
 

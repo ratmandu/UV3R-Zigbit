@@ -193,10 +193,11 @@ void rda_setRef() {
 
 void rda_toneWait(uint16_t freq, uint16_t wait) {
   rda_write(0x36, freq);
-  while (wait--) {
-    _delay_us(1);
-    // wait--;
-  }
+  _delay_us(BITWAIT);
+  // while (wait--) {
+  //   _delay_us(1);
+  //   // wait--;
+  // }
 }
 
 void rda_sendDigital(unsigned char data[], int dLen, unsigned short t,

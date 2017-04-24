@@ -57,6 +57,8 @@ typedef struct {
     uint16_t data;
 } dataFormat_t;
 
+#define BITWAIT 783
+
 dataFormat_t initData[31] = {
  { 0x30, 0x0001 },
  { 0x30, 0x0004 },
@@ -86,10 +88,11 @@ dataFormat_t initData[31] = {
  { 0x48, 0x03FF }, //0000 0011 1111 0000
  { 0x49, 0x01b3 }, //0003
  { 0x3C, 0x0958 }, //0000 1001 0101 1000
- { 0x43, 0x1414 },
+ { 0x43, 0x1818 },
  { 0x30, 0x3006 },
  { 0x36, 0x1000 },
- { 0x58, 0x001F },
+ { 0x36, 0x0000 },
+ // { 0x58, 0x0000 },
 };
 
 
